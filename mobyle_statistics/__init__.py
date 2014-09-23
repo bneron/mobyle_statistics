@@ -1,9 +1,9 @@
 #========================
-# :Date:Sept 120, 2014
+# :Date:Sept 23, 2014
 # :Authors: Bertrand Néron
 # :Contact: bneron<at>pasteur<dot>fr
 # :Organization: Institut Pasteur
-# :license: GPLv3
+# :license: BSD
 #========================
 
 import sys

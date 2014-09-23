@@ -1,11 +1,11 @@
 #! /usr/bin/env python3
 
 #========================
-# :Date:Sept 120, 2014
+# :Date:Sept 20, 2014
 # :Authors: Bertrand Néron
 # :Contact: bneron<at>pasteur<dot>fr
 # :Organization: Institut Pasteur
-# :license: GPLv3
+# :license: BSD
 #========================
 
 import pymongo
