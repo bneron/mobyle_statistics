@@ -9,7 +9,6 @@
 #========================
 
 import pymongo
-
 import sys
 sys.path.insert(0, '/home/bneron/Mobyle/mobyle_statistics')
 import gzip
@@ -18,9 +17,18 @@ import gzip
 from mobyle_statistics import make_log_parser
 
 
-
-def create_db():
-    client = pymongo.MongoClient(w=1, j=True)
+def create_db(host='localhost', port=27017):
+    """
+    Create a new connection to a single MongoDB
+    
+    :param host: the mongo server host
+    :type host: str
+    :param port: the mongo server port
+    :type port: int
+    :returns: a pymongo collection
+    :rtype: :class:`pymongo.collection.Collection` object
+    """
+    client = pymongo.MongoClient(hots, port, w = 1, j = True)
     db = client.mobyle_1
     col = db.logs
     col.create_index('service_name')
@@ -28,15 +36,48 @@ def create_db():
     col.create_index('user')
     return col
 
-def fill_db(log_paths, db_logs):        
-    geo_city_db_path = '/home/bneron/Mobyle/mobyle_statistics/data/GeoLite2-City.mmdb'
+
+def fill_db(log_paths, logs_col, geo_city_db_path):    
+    """
+    :param log_paths: the paths of log file in gzip format
+    :type log_paths: list of string
+    :param logs_col: the collection where the logs are stored
+    :type logs_col: class:`pymongo.collection.Collection`
+    :param geo_city_db_path: the path of the GeoLite2
+    :type geo_city_db_path: string
+    """    
     parse_log = make_log_parser(geo_city_db_path)
     for log_path in log_paths:
         with gzip.open(log_path, 'rt') as log_file:
             for log in parse_log(log_file):
                 db_logs.insert(log)
+
                 
 if __name__ == '__main__':                
-    log_paths = sys.argv[1:]  
-    db_logs = create_db()
-    fill_db(log_paths, db_logs)          
+
+    import argparse
+    import os
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument( "log_paths",
+                         nargs = "+",
+                         help = "path of logs to parse in gzip format (don't deflate files)")
+    parser.add_argument( "--host",
+                         dest = "db_host",
+                         default = "localhost",
+                         help = "the host of mongo server (allow you to specify a non-local host)")
+    parser.add_argument( "--port",
+                         dest = "db_port",
+                         type = int,
+                         default = 27017,
+                         help = "the port of the mongo server")
+    parser.add_argument( "--geo",
+                         dest = "geo_city_db_path",
+                         default = os.path.abspath(os.path.join("..", "data", "GeoLite2-City.mmdb")),
+                         help = "the path of a maxmind GeoLite2 City DB (GeoLite2-City.mmdb)")
+                         
+    args = parser.parse_args()
+    
+    log_col = create_db(host=args.host, port=args.port)
+    fill_db(args.log_paths, log_col, args.geo_city_db_path)
+              
