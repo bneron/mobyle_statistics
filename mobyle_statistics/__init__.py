@@ -10,10 +10,10 @@ import sys
 #import ldap
 from datetime import datetime
 
-def bypass_email(func):
-    def wrapper(email):
-        return email 
-    return wrapper
+#def bypass_email(func):
+#    def wrapper(email):
+#        return email 
+#    return wrapper
 
 def memoize(func):
     cache = {}
@@ -26,7 +26,6 @@ def memoize(func):
     return wrapper
 
  
-# @bypass_email
 # @memoize
 # def get_long_email(email):
 #     
@@ -53,7 +52,8 @@ def parse_login_email():
             for line in in_file:
                 login, long_email = line.split(';')
                 login = login[1:-1]
-                long_email = long_email[1:-2] #eliminer le " + \n
+                # we have to remove the last " and the \n 
+                long_email = long_email[1:-2] 
                 login2email[login] = long_email
                 
     def get_long_email(short_email):
@@ -66,7 +66,7 @@ def parse_login_email():
         else:
             long_email = short_email
         return long_email
-    
+    #fill the login2email dict which will use in the closure
     parse()
     return get_long_email
 
