@@ -1,0 +1,42 @@
+#! /usr/bin/env python3
+
+#========================
+# :Date:Sept 120, 2014
+# :Authors: Bertrand Néron
+# :Contact: bneron<at>pasteur<dot>fr
+# :Organization: Institut Pasteur
+# :license: GPLv3
+#========================
+
+import pymongo
+
+import sys
+sys.path.insert(0, '/home/bneron/Mobyle/mobyle_statistics')
+import gzip
+
+
+from mobyle_statistics import make_log_parser
+
+
+
+def create_db():
+    client = pymongo.MongoClient(w=1, j=True)
+    db = client.mobyle_1
+    col = db.logs
+    col.create_index('service_name')
+    col.create_index('pasteurien')
+    col.create_index('user')
+    return col
+
+def fill_db(log_paths, db_logs):        
+    geo_city_db_path = '/home/bneron/Mobyle/mobyle_statistics/data/GeoLite2-City.mmdb'
+    parse_log = make_log_parser(geo_city_db_path)
+    for log_path in log_paths:
+        with gzip.open(log_path, 'rt') as log_file:
+            for log in parse_log(log_file):
+                db_logs.insert(log)
+                
+if __name__ == '__main__':                
+    log_paths = sys.argv[1:]  
+    db_logs = create_db()
+    fill_db(log_paths, db_logs)          
