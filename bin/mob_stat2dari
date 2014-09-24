@@ -9,39 +9,55 @@
 #========================
 
 
-pasteur_services = {'reoder_align', 
-                    'blast2seqids', 
-                    'blast2taxonomy', 
-                    'blast2genoclass', 
-                    'cif', 
-                    'concatfasta', 
-                    'extend_align', 
-                    'fasta-rename',
-                    'golden', 
-                    'squizz', 
-                    'gruppi', 
-                    'html4blast', 
-                    'melting', 
-                    'imogene', 
-                    'ELP', 
-                    'growthpred', 
-                    'morePhyml', 
-                    'pdb2', 
-                    'pdb10', 
-                    'pdb21', 
-                    'pdb22',
-                    'pdb23',
-                    'prose', 
-                    'protal2dna', 
-                    'rankoptimizer', 
-                    'rbvotree', 
-                    'forest2consense',
-                    'bigorf_extract', 
-                    'seqsblast', 
-                    'sig', 
-                    'taxoptimizer', 
-                    'toppred', 
-                    'xxr', 
-                    'repeatoire', 
-                    'T3SSscan-FLAGscan' , 
-                    'CONJscan-T4SSscan']
+pasteur_services = {'align_reorder' : ['align_reorder'], 
+                    'blast2seqids' : ['blast2seqids'] , 
+                    'blast2taxonomy' : ['blast2taxonomy'], 
+                    'blast2taxoclass' : ['blast2taxoclass'],
+                    'blast2genoclass' : ['blast2genoclass'], 
+                    'cif' : ['cif'], 
+                    'concatfasta' : ['concatfasta'], 
+                    'extend_align' : ['extend_align'], 
+                    'fastaRename' : ['fastaRename'],
+                    'golden' : ['golden'], 
+                    'squizz' : ['squizz_checker', 'squizz_convert'], 
+                    'gruppi' : ['gruppi'], 
+                    'html4blast' : ['html4blast'], 
+                    'melting' : ['melting'], 
+                    'imogene' : ['imogene'], 
+                    'ELP' : ['ELP'], 
+                    'growthpred' : ['growthpred'], 
+                    'morePhyml' : ['morePhyml'], 
+                    'pdb2' : ['pdb2'], 
+                    'pdb10' : ['pdb10'], 
+                    'pdb21' : ['pdb21'], 
+                    'pdb22' : ['pdb22'],
+                    'pdb23' : ['pdb23'],
+                    'prose' : ['prose'], 
+                    'protal2dna' : ['protal2dna'], 
+                    'rankoptimizer' : ['rankoptimizer'], 
+                    'rbvotree' : ['rbvotree'], 
+                    'forest2consense' : ['forest2consense'],
+                    'bigorf_extract' : ['bigorf_extract'], 
+                    'seqsblast' : ['seqsblast'], 
+                    'sig' : ['sig'], 
+                    'taxoptimizer' : ['taxoptimizer'], 
+                    'toppred' : ['toppred'], 
+                    'xxr' : ['xxr'], 
+                    'repeatoire' : ['repeatoire'], 
+                    'T3SSscan-FLAGscan' : ['T3SSscan-FLAGscan'] , 
+                    'CONJscan-T4SSscan' : ['CONJscan-T4SSscan']
+                    }
+
+
+now = time.localtime()
+now = now.tm_year 
+for year in range(2011, now + 1):
+    tot_jobs = get_jobs_number(col, pasteuriens = True, foreigners = True, year = year)
+    pasteur_jobs = get_jobs_number(col, pasteuriens = True, foreigners = False, year = year)
+    foreign_jobs = get_jobs_number(col, pasteuriens = False, foreigners = True, year = year)
+    
+    for prog , interfaces in pasteur_services.items():
+        
+        num_of_jobs_by_prog(col, pasteuriens = True, foreigners = True, year = year, prog = interface)
+        num_of_jobs_by_prog(col, pasteuriens = True, foreigners = False, year = year, prog = interface)
+        num_of_jobs_by_prog(col, pasteuriens = False, foreigners = True, year = year, prog = interface)
