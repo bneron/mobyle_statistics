@@ -34,6 +34,7 @@ def create_db(host='localhost', port=27017):
     col.create_index('service_name')
     col.create_index('pasteurien')
     col.create_index('user')
+    col.create_index('date')
     return col
 
 
