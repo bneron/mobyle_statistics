@@ -10,6 +10,6 @@ provide a set of features to:
 dependencies
 ============
 
-python3.3 or newer
-geoip2 (*https://pypi.python.org/pypi/geoip2*)
+* python3.3 or newer
+* geoip2 (https://pypi.python.org/pypi/geoip2)
 
