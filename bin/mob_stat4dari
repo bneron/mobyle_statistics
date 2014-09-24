@@ -7,57 +7,87 @@
 # :Organization: Institut Pasteur
 # :license: BSD
 #========================
+import sys
+sys.path.insert(0, '/home/bneron/Mobyle/mobyle_statistics')
+import time
+import pymongo
+import collections
+
+from mobyle_statistics import num_of_jobs_by_service
 
 
-pasteur_services = {'align_reorder' : ['align_reorder'], 
-                    'blast2seqids' : ['blast2seqids'] , 
-                    'blast2taxonomy' : ['blast2taxonomy'], 
-                    'blast2taxoclass' : ['blast2taxoclass'],
-                    'blast2genoclass' : ['blast2genoclass'], 
-                    'cif' : ['cif'], 
-                    'concatfasta' : ['concatfasta'], 
-                    'extend_align' : ['extend_align'], 
-                    'fastaRename' : ['fastaRename'],
-                    'golden' : ['golden'], 
-                    'squizz' : ['squizz_checker', 'squizz_convert'], 
-                    'gruppi' : ['gruppi'], 
-                    'html4blast' : ['html4blast'], 
-                    'melting' : ['melting'], 
-                    'imogene' : ['imogene'], 
-                    'ELP' : ['ELP'], 
-                    'growthpred' : ['growthpred'], 
-                    'morePhyml' : ['morePhyml'], 
-                    'pdb2' : ['pdb2'], 
-                    'pdb10' : ['pdb10'], 
-                    'pdb21' : ['pdb21'], 
-                    'pdb22' : ['pdb22'],
-                    'pdb23' : ['pdb23'],
-                    'prose' : ['prose'], 
-                    'protal2dna' : ['protal2dna'], 
-                    'rankoptimizer' : ['rankoptimizer'], 
-                    'rbvotree' : ['rbvotree'], 
-                    'forest2consense' : ['forest2consense'],
-                    'bigorf_extract' : ['bigorf_extract'], 
-                    'seqsblast' : ['seqsblast'], 
-                    'sig' : ['sig'], 
-                    'taxoptimizer' : ['taxoptimizer'], 
-                    'toppred' : ['toppred'], 
-                    'xxr' : ['xxr'], 
-                    'repeatoire' : ['repeatoire'], 
-                    'T3SSscan-FLAGscan' : ['T3SSscan-FLAGscan'] , 
-                    'CONJscan-T4SSscan' : ['CONJscan-T4SSscan']
-                    }
-
+pasteur_services = collections.OrderedDict((
+                                           ('blast2taxonomy', ('blast2taxonomy', )), 
+                                           ('blast2taxoclass', ('blast2taxoclass', )),
+                                           ('blast2genoclass', ('blast2genoclass', )),
+                                           ('taxoptimizer', ('taxoptimizer' ,)), 
+                                           ('rankoptimizer', ('rankoptimizer')), 
+                                           ('rbvotree', ('rbvotree', )),
+                                           ('concatfasta', ('concatfasta', )), 
+                                           ('cif', ('cif', )), 
+                                           ('extend_align', ('extend_align', )), 
+                                           ('fastaRename', ('fastaRename', )),
+                                           ('align_reorder', ('align_reorder', )),
+                                           ('blast2seqids', ('blast2seqids','blast2seqid', 'blast2usa')), 
+                                           ('golden', ('golden', )), 
+                                           ('squizz', ('squizz_checker', 'squizz_convert')), 
+                                           ('html4blast', ('html4blast', )),
+                                           ('prose', ('prose', )), 
+                                           ('sig', ('sig', )),
+                                           ('seqsblast', ('seqsblast', )), 
+                                           ('protal2dna', ('protal2dna', )), 
+                                           ('forest2consense', ('forest2consense', )),
+                                           ('bigorf_extract', ('bigorf_extract', )), 
+                                           ('toppred', ('toppred',)),
+                                           ('pdb2', ('pdb2', )), 
+                                           ('pdb10', ('pdb10', )), 
+                                           ('pdb21', ('pdb21', )), 
+                                           ('pdb22', ('pdb22', )),
+                                           ('pdb23', ('pdb23', )),
+                                           ('gruppi', ('gruppi', )), 
+                                           ('melting', ('melting', )), 
+                                           ('imogene', ('imogene', )), 
+                                           ('morePhyml', ('morePhyml', )), 
+                                           ('xxr', ('xxr', )), 
+                                           ('ELP', ('ELP', )), 
+                                           ('growthpred', ('growthpred', )), 
+                                           ('repeatoire', ('repeatoire', )), 
+                                           ('T3SSscan-FLAGscan', ('T3SSscan-FLAGscan', )), 
+                                           ('CONJscan-T4SSscan', ('CONJscan-T4SSscan', ))
+                                           )
+                                          )
 
 now = time.localtime()
 now = now.tm_year 
+results = {}
+
+client = pymongo.MongoClient()
+db = client.mobyle_1
+col = db.logs
+
 for year in range(2011, now + 1):
-    tot_jobs = get_jobs_number(col, pasteuriens = True, foreigners = True, year = year)
-    pasteur_jobs = get_jobs_number(col, pasteuriens = True, foreigners = False, year = year)
-    foreign_jobs = get_jobs_number(col, pasteuriens = False, foreigners = True, year = year)
-    
-    for prog , interfaces in pasteur_services.items():
+    results[year] = {}
+    results[year]['tot_jobs'] = num_of_jobs_by_service(col, year = year)
+    results[year]['pasteur_jobs'] = num_of_jobs_by_service(col, pasteurien = True, foreigner = False, year = year)
+    results[year]['foreign_jobs'] = num_of_jobs_by_service(col, pasteurien = False, foreigner = True, year = year)
+    print( "\n{}\n".format(year))
+    print("program,jobs,from pasteur,from outside")
+    for program , interfaces in pasteur_services.items():
+        res_by_interfaces = {'tot_jobs': [],
+                      'pasteur_jobs' : [],
+                      'foreign_jobs' : [],
+                      }
+        results[year][program] = {}
+        for interface in interfaces:
+            res_by_interfaces['tot_jobs'].append(num_of_jobs_by_service(col, year = year, service = interface))
+            res_by_interfaces['pasteur_jobs'].append(num_of_jobs_by_service(col, pasteurien = True, foreigner = False, year = year, service = interface))
+            res_by_interfaces['foreign_jobs'].append(num_of_jobs_by_service(col, pasteurien = False, foreigner = True, year = year, service = interface))
+        results[year][program]['tot_jobs'] = sum(res_by_interfaces['tot_jobs'])
+        results[year][program]['pasteur_jobs'] = sum(res_by_interfaces['pasteur_jobs'])  
+        results[year][program]['foreign_jobs'] = sum(res_by_interfaces['foreign_jobs'])    
+        print("{},".format(program) , "{tot_jobs},{pasteur_jobs},{foreign_jobs}".format(**results[year][program]))
+    print("total,{tot_jobs},{pasteur_jobs},{foreign_jobs}".format(**results[year]))
         
-        num_of_jobs_by_prog(col, pasteuriens = True, foreigners = True, year = year, prog = interface)
-        num_of_jobs_by_prog(col, pasteuriens = True, foreigners = False, year = year, prog = interface)
-        num_of_jobs_by_prog(col, pasteuriens = False, foreigners = True, year = year, prog = interface)
+        
+        
+        

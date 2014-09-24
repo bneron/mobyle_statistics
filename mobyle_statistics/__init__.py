@@ -188,33 +188,28 @@ def get_location_resolver(db_path):
     return get_location
 
 
-def num_of_user_by_service(col, pasteuriens = True, foreigners = True, year = None, service = None):
+def num_of_user_by_service(col, pasteurien = True, foreigner = True, year = None, service = None):
     pass
 
-def num_of_service_by_users(col, pasteuriens = True, foreigners = True, year = None):
+def num_of_service_by_users(col, pasteurien = True, foreigner = True, year = None):
     pass
 
-def num_of_jobs_by_service(col, pasteuriens = True, foreigners = True, year = None, service = None):
-    filters = []
+def num_of_jobs_by_service(col, pasteurien = True, foreigner = True, year = None, service = None):
+    filters = {}
     if year:
         start = datetime(year, 1, 1)
         end = datetime(year +1, 1, 1)
-        filter = {"date": {"$gte": start, "$lt": end}}
-        filters.append(filter)
-    if pasteuriens and not foreigners:
-        filter = {'pasteuriens' : True}
-        filters.append(fiter)
-    elif not pasteuriens and foreigners:
-        filter = {'pasteuriens' : False}
-        filters.append(fiter)
-    elif not pasteuriens and not foreigners:
+        filters['date'] =  {"$gte": start, "$lt": end}
+    if pasteurien and not foreigner:
+        filters['pasteurien'] = True
+    elif not pasteurien and foreigner:
+        filters['pasteurien'] = False
+    elif not pasteurien and not foreigner:
         return 0
     else:
         pass
     if service :
-        filter = {'service_name' : service}
-        filters.append(fiter)
-    print(filters)
+        filters['service_name'] = service
     res = col.find(filters).count()
     return res
 
