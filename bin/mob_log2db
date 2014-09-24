@@ -28,7 +28,7 @@ def create_db(host='localhost', port=27017):
     :returns: a pymongo collection
     :rtype: :class:`pymongo.collection.Collection` object
     """
-    client = pymongo.MongoClient(hots, port, w = 1, j = True)
+    client = pymongo.MongoClient(host, port, w = 1, j = True)
     db = client.mobyle_1
     col = db.logs
     col.create_index('service_name')
