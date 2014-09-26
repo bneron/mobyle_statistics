@@ -45,8 +45,35 @@ def memoize(func):
 #         email = user[0][1]['mail'][0]
 #     return email
 
+
+def get_unit(login):
+     
+    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
+    con = ldap.initialize('ldaps://ldap.pasteur.fr')
+    con.simple_bind_s()
+    base_dn='dc=pasteur,dc=fr'
+    
+    user_base_dn='ou=personnes,ou=utilisateurs,' + base_dn 
+    filter = '(& (objectclass=posixAccount) (uid={}))'.format(login)
+    attrs =['gidNumber']
+    user = con.search_s(user_base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+    if user:
+        gid_number = user[0][1]['gidNumber'][0]
+    else:
+        return
+    goup_base_dn = 'ou=entites,ou=groupes,' + base_dn
+    filter = '(& (objectclass=posixGroup) (gidNumber={}))'.format(gid_number)
+    attrs = ['description']
+    group = con.search_s(goup_base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+    if group:
+        try:
+            return group[0][1]['description'][0]
+        except KeyError:
+            return
+        
 def parse_login_email():
     login2email = {}
+    
     def parse():
         with open('/home/bneron/Mobyle/mobyle_statistics/data/mails.txt', 'r') as in_file:
             for line in in_file:
@@ -55,7 +82,9 @@ def parse_login_email():
                 # we have to remove the last " and the \n 
                 long_email = long_email[1:-2] 
                 login2email[login] = long_email
-                
+    #fill the login2email dict which will use in the closure
+    parse()           
+    
     def get_long_email(short_email):
         login = short_email.split('@')[0]
         if login.find('.') == -1:
@@ -66,11 +95,20 @@ def parse_login_email():
         else:
             long_email = short_email
         return long_email
-    #fill the login2email dict which will use in the closure
-    parse()
-    return get_long_email
+    
+    email2login = {v:k for k,v in login2email.items()}
+    
+    def get_login(long_email):
+        user = long_email.split('@')[0]
+        if user.find('.') == -1:
+            login = user
+        else:
+            login = email2login[long_email]
+        return longin
+    
+    return get_long_email, get_login
 
-get_long_email = parse_login_email()
+get_long_email, get_login = parse_login_email()
 
 
 def make_log_parser(db_path):
@@ -133,6 +171,9 @@ def make_log_parser(db_path):
             if submition_email.endswith('pasteur.fr'):
                 log['pasteurien'] = True
                 log['user'] = get_long_email(submition_email)
+                login = get_login(submition_email)
+                unit = get_unit(login)
+                log['unit'] = unit
             else:
                 log['pasteurien'] = False
                 log['user'] = submition_email
