@@ -51,7 +51,7 @@ def fill_db(log_paths, logs_col, geo_city_db_path):
     for log_path in log_paths:
         with gzip.open(log_path, 'rt') as log_file:
             for log in parse_log(log_file):
-                db_logs.insert(log)
+                logs_col.insert(log)
 
                 
 if __name__ == '__main__':                
@@ -72,6 +72,10 @@ if __name__ == '__main__':
                          type = int,
                          default = 27017,
                          help = "the port of the mongo server")
+    parser.add_argument( "--db-name",
+                         dest = "db_name",
+                         default = "mobyle_1",
+                         help = "the name of mongo database (default = mobyle_1)")
     parser.add_argument( "--geo",
                          dest = "geo_city_db_path",
                          default = os.path.abspath(os.path.join("..", "data", "GeoLite2-City.mmdb")),
@@ -79,6 +83,6 @@ if __name__ == '__main__':
                          
     args = parser.parse_args()
     
-    log_col = create_db(host=args.host, port=args.port, db_name='mobyle_1')
+    log_col = create_db(host=args.db_host, port=args.db_port, db_name=args.db_name)
     fill_db(args.log_paths, log_col, args.geo_city_db_path)
               
