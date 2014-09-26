@@ -7,7 +7,7 @@
 #========================
 
 import sys
-#import ldap
+import ldap
 from datetime import datetime
 
 #def bypass_email(func):
@@ -47,7 +47,7 @@ def memoize(func):
 
 
 def get_unit(login):
-     
+    print("@@get_unit ", login)
     ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
     con = ldap.initialize('ldaps://ldap.pasteur.fr')
     con.simple_bind_s()
@@ -57,17 +57,21 @@ def get_unit(login):
     filter = '(& (objectclass=posixAccount) (uid={}))'.format(login)
     attrs =['gidNumber']
     user = con.search_s(user_base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+    print("@@get_unit user = ", user)
     if user:
         gid_number = user[0][1]['gidNumber'][0]
     else:
         return
+    gid_number = gid_number.decode()
+    print("@@get_unit gid_number = ", gid_number)
     goup_base_dn = 'ou=entites,ou=groupes,' + base_dn
     filter = '(& (objectclass=posixGroup) (gidNumber={}))'.format(gid_number)
     attrs = ['description']
     group = con.search_s(goup_base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+    print("@@get_unit group = ", group)
     if group:
         try:
-            return group[0][1]['description'][0]
+            return group[0][1]['description'][0].decode()
         except KeyError:
             return
         
@@ -104,7 +108,7 @@ def parse_login_email():
             login = user
         else:
             login = email2login[long_email]
-        return longin
+        return login
     
     return get_long_email, get_login
 
