@@ -17,7 +17,7 @@ import gzip
 from mobyle_statistics import make_log_parser
 
 
-def create_db(host='localhost', port=27017):
+def create_db(host='localhost', port=27017, db_name='mobyle_1'):
     """
     Create a new connection to a single MongoDB
     
@@ -29,7 +29,7 @@ def create_db(host='localhost', port=27017):
     :rtype: :class:`pymongo.collection.Collection` object
     """
     client = pymongo.MongoClient(hots, port, w = 1, j = True)
-    db = client.mobyle_1
+    db = client[db_name]
     col = db.logs
     col.create_index('service_name')
     col.create_index('pasteurien')
@@ -78,6 +78,6 @@ if __name__ == '__main__':
                          
     args = parser.parse_args()
     
-    log_col = create_db(host=args.host, port=args.port)
+    log_col = create_db(host=args.host, port=args.port, db_name='mobyle_1')
     fill_db(args.log_paths, log_col, args.geo_city_db_path)
               
