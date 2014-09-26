@@ -229,17 +229,30 @@ def get_location_resolver(db_path):
     return get_location
 
 
-def get_jobs_number(connection, pasteuriens = True, foreigners = True, year = None, month = None):
+def num_of_user_by_service(col, pasteurien = True, foreigner = True, year = None, service = None):
     pass
 
-def num_of_user_by_prog(connection, pasteuriens = True, foreigners = True, year = None, prog = None):
+def num_of_service_by_users(col, pasteurien = True, foreigner = True, year = None):
     pass
 
-def num_of_prog_by_user(connection, pasteuriens = True, foreigners = True, year = None):
-    pass
-
-def num_of_jobs_by_prog(connection, pasteuriens = True, foreigners = True, year = None, prog = None):
-    pass
+def num_of_jobs_by_service(col, pasteurien = True, foreigner = True, year = None, service = None):
+    filters = {}
+    if year:
+        start = datetime(year, 1, 1)
+        end = datetime(year +1, 1, 1)
+        filters['date'] =  {"$gte": start, "$lt": end}
+    if pasteurien and not foreigner:
+        filters['pasteurien'] = True
+    elif not pasteurien and foreigner:
+        filters['pasteurien'] = False
+    elif not pasteurien and not foreigner:
+        return 0
+    else:
+        pass
+    if service :
+        filters['service_name'] = service
+    res = col.find(filters).count()
+    return res
 
 def num_of_jobs_by_country(connection, year = None):
     pass

@@ -28,12 +28,13 @@ def create_db(host='localhost', port=27017, db_name='mobyle_1'):
     :returns: a pymongo collection
     :rtype: :class:`pymongo.collection.Collection` object
     """
-    client = pymongo.MongoClient(hots, port, w = 1, j = True)
+    client = pymongo.MongoClient(host, port, w = 1, j = True)
     db = client[db_name]
     col = db.logs
     col.create_index('service_name')
     col.create_index('pasteurien')
     col.create_index('user')
+    col.create_index('date')
     return col
 
 
