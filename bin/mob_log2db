@@ -31,10 +31,27 @@ def create_db(host='localhost', port=27017, db_name='mobyle_1'):
     client = pymongo.MongoClient(host, port, w = 1, j = True)
     db = client[db_name]
     col = db.logs
-    col.create_index('service_name')
-    col.create_index('pasteurien')
-    col.create_index('user')
-    col.create_index('date')
+    col.ensure_index('service_name')
+    col.ensure_index('pasteurien')
+    col.ensure_index('user')
+    col.ensure_index('date')
+    return col
+
+
+def get_db(host='localhost', port=27017, db_name='mobyle_1'):
+    """
+    Create a new connection to a single MongoDB
+    
+    :param host: the mongo server host
+    :type host: str
+    :param port: the mongo server port
+    :type port: int
+    :returns: a pymongo collection
+    :rtype: :class:`pymongo.collection.Collection` object
+    """
+    client = pymongo.MongoClient(host, port, w = 1, j = True)
+    db = client[db_name]
+    col = db.logs
     return col
 
 
@@ -76,7 +93,7 @@ if __name__ == '__main__':
                          dest = "db_name",
                          default = "mobyle_1",
                          help = "the name of mongo database (default = mobyle_1)")
-    parser.add_argument( "--geo",
+    parser.add_argument( "-",
                          dest = "geo_city_db_path",
                          default = os.path.abspath(os.path.join("..", "data", "GeoLite2-City.mmdb")),
                          help = "the path of a maxmind GeoLite2 City DB (GeoLite2-City.mmdb)")
