@@ -1,9 +1,11 @@
 import pymongo
-import datetime
+from datetime import datetime
+import urllib.request
+import json
 import sys
 sys.path.insert(0, '/home/bneron/Mobyle/mobyle_statistics')
 
-from mobyle_statistics import *
+from mobyle_statistics import uniq_user, count_jobs, user_count_per_service, jobs_count_per_service
 
 
 client = pymongo.MongoClient('localhost', 27017, w=1, j=True)
@@ -59,6 +61,22 @@ for s_name, count in uc_pa.items():
     else:
         user_count[s_name] = {'past': len(count)}
 
+
+resp = urllib.request.urlopen("http://mobyle.pasteur.fr/cgi-bin/net_services.py")
+if resp.getcode() == 200:
+    all_services = json.loads(resp.readline().decode('utf-8'))
+    all_services = all_services.keys()
+    unused_services = set(all_services) - set(job_count.keys())
+    for service_name in unused_services:
+        job_count[service_name] = {'all':0, 'for': 0, 'past': 0}
+
+    unused_services = set(all_services) - set(user_count.keys())
+    for service_name in unused_services:
+        user_count[service_name] = {'all':0 , 'for': 0, 'past': 0}
+
+else:
+    print("request to Mobyle failed: {}: {}".format(resp.getcode(), resp.msg), file=sys.stderr)
+    print("unused services will not take in account")
 #############################
 
 print("Distinct users")
