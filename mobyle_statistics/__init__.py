@@ -7,7 +7,7 @@
 #========================
 
 import sys
-import ldap
+import ldap3
 from datetime import datetime
 
 #def bypass_email(func):
@@ -28,32 +28,22 @@ def memoize(func):
  
 @memoize
 def get_long_email(email):
-     
-    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
-    con = ldap.initialize( 'ldaps://ldap.pasteur.fr' )
-    con.simple_bind_s()
-    user, domainName  = email.split('@')
- 
+    user, domainName = email.split('@')
     base_dn='ou=personnes,ou=utilisateurs,dc=pasteur,dc=fr'
     if user.find('.') != -1:
-        filter = '(& (objectclass=posixAccount) (mail=%s))'.format(email)
+        filter = '(& (objectclass=posixAccount) (mail={}))'.format(email)
     else:
-        filter = '(& (objectclass=posixAccount) (uid=%s))'.format(user)
+        filter = '(& (objectclass=posixAccount) (uid={}))'.format(user)
     attrs =['mail']
-    user = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-    if user:
-        email = user[0][1]['mail'][0]
+    with ldap3.Connection(ldap3.Server('ldap.pasteur.fr', use_ssl=True), auto_bind=True, check_names=True) as con:
+        resp = con.search(base_dn, filter, attributes=attrs)
+        email = con.response[0]['attributes']['mail'][0] if resp else None
     return email
 
 
 @memoize
 def get_login(email):
-     
-    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
-    con = ldap.initialize( 'ldaps://ldap.pasteur.fr' )
-    con.simple_bind_s()
     user, domainName  = email.split('@')
- 
     base_dn='dc=pasteur,dc=fr'
     user_base_dn='ou=personnes,ou=utilisateurs,' + base_dn 
     if user.find('.') != -1:
@@ -61,11 +51,10 @@ def get_login(email):
     else:
         filter = '(& (objectclass=posixAccount) (uid={}))'.format(user)
     attrs =['uid']
-    user = con.search_s(user_base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-    if user:
-        email = user[0][1]['uid'][0]
+    with ldap3.Connection(ldap3.Server('ldap.pasteur.fr', use_ssl=True), auto_bind=True, check_names=True) as con:
+        resp = con.search(base_dn, filter, attributes=attrs)
+        email = con.response[1]['attributes']['uid'][0] if resp else None
     return email
-
 
 
 def get_unit(login):
@@ -75,29 +64,24 @@ def get_unit(login):
     :returns: the name of theunit the user belong to
     :rtype: string
     """
-    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_ALLOW)
-    con = ldap.initialize('ldaps://ldap.pasteur.fr')
-    con.simple_bind_s()
     base_dn='dc=pasteur,dc=fr'
-    
-    user_base_dn='ou=personnes,ou=utilisateurs,' + base_dn 
+    user_base_dn='ou=personnes,ou=utilisateurs,' + base_dn
     filter = '(& (objectclass=posixAccount) (uid={}))'.format(login)
     attrs =['gidNumber']
-    user = con.search_s(user_base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-    if user:
-        gid_number = user[0][1]['gidNumber'][0]
-    else:
-        return
-    gid_number = gid_number.decode()
+    server = ldap3.Server('ldap.pasteur.fr', use_ssl=True)
+    with ldap3.Connection(server, auto_bind=True, check_names=True) as con:
+        resp = con.search(base_dn, filter, attributes=attrs)
+        if resp:
+            gid_number = con.response[1]['attributes']['gidNumber'][0]
+        else:
+            return None
     goup_base_dn = 'ou=entites,ou=groupes,' + base_dn
     filter = '(& (objectclass=posixGroup) (gidNumber={}))'.format(gid_number)
     attrs = ['description']
-    group = con.search_s(goup_base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-    if group:
-        try:
-            return group[0][1]['description'][0].decode()
-        except KeyError:
-            return
+    with ldap3.Connection(server, auto_bind=True, check_names=True) as con:
+        resp = con.search(goup_base_dn, filter, attributes=attrs)
+        unit = con.response[0]['attributes']['description'][0] if resp else None
+    return unit
         
         
         
