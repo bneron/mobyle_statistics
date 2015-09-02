@@ -75,11 +75,11 @@ def get_unit(login):
             gid_number = con.response[1]['attributes']['gidNumber'][0]
         else:
             return None
-    goup_base_dn = 'ou=entites,ou=groupes,' + base_dn
+    group_base_dn = 'ou=entites,ou=groupes,' + base_dn
     filter = '(& (objectclass=posixGroup) (gidNumber={}))'.format(gid_number)
     attrs = ['description']
     with ldap3.Connection(server, auto_bind=True, check_names=True) as con:
-        resp = con.search(goup_base_dn, filter, attributes=attrs)
+        resp = con.search(group_base_dn, filter, attributes=attrs)
         unit = con.response[0]['attributes']['description'][0] if resp else None
     return unit
         
