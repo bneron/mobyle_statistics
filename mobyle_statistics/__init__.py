@@ -71,7 +71,7 @@ def get_unit(login):
     server = ldap3.Server('ldap.pasteur.fr', use_ssl=True)
     with ldap3.Connection(server, auto_bind=True, check_names=True) as con:
         resp = con.search(base_dn, filter, attributes=attrs)
-        if resp:
+        if resp and len(con.response) > 1:
             gid_number = con.response[1]['attributes']['gidNumber'][0]
         else:
             return None
