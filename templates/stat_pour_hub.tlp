@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
+<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+</head>
+<body>
+
+<div data-role="page" id="pageone">
+  <div data-role="header">
+    <h1>Interfaces Mobyle</h1>
+  </div>
+
+  <div data-role="main" class="ui-content">
+    <div data-role="collapsible">
+      <h1>Category 1 pasteur:12 world: 24</h1>
+      <div data-role="collapsible">
+        <h1>Category 1.1 pasteur 23</h1>
+        <div data-role="collapsible">
+          <h1>Category 1.1.2 pasteur world </h1>
+          <p>golden pasteur : 23</p>
+					<p>interface pasteur: 12 world 32</p>
+        </div>
+      </div>
+      <div data-role="collapsible">
+        <h1>Category 2.1</h1>
+        <p>golden pasteur : 23</p>
+      </div>
+    </div>
+  </div>
+
+  <div data-role="footer">
+    <h1>Insert Footer Text Here</h1>
+  </div>
+</div> 
+
+</body>
+</html>
