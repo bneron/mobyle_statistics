@@ -39,7 +39,13 @@ class Node(metaclass=ABCMeta):
 
     def to_html(self):
         s = '<div data-role="collapsible">\n'
-        s += '<h1><span style="color:blue">{name}</span> pasteur:{pasteur:d} | other:{other:d} | total:{all:d}</h1>\n'.format(name=self.name, **self.job)
+        s += """<h1>
+<span style="color:blue">{name}</span> pasteur:{pasteur:d} | other:{other:d} | total:{all:d}""".format(name=self.name,
+                                                                                                       **self.job)
+        if self.parent:
+            s += " ({job_part:.2%} of {cat_name} jobs)".format(job_part=self.job['all'] / self.parent.job['all'],
+                                                                         cat_name=self.parent.name)
+        s += "</h1>\n"
         for child_name in sorted(self.children):
             s += self.children[child_name].to_html()
         s += '</div>\n'
@@ -62,16 +68,49 @@ class Category(Node):
 
 class Interface(Node):
 
-    def __init__(self, name, job=None, package=None, authors=None, citations=None, homepage=None):
+    def __init__(self, name, job=None, users=None, package=None, authors=None, references=None, homepage=None):
         super().__init__(name, job=job)
         self.parent = []
         self.package = package
         self.authors = authors if authors is not None else []
-        self.citations = citations if citations is not None else []
+        self.references = references if references is not None else []
         self.homepage = homepage
+        self.users = users
 
     def to_html(self):
-        s = '<p><span style="color:blue">{name}</span> pasteur:{pasteur:d} | other:{other:d} | total:{all:d}</p>\n'.format(name=self.name, **self.job)
+        s = """<div data-role="collapsible">
+<h1>
+ <a href="http://mobyle.pasteur.fr/cgi-bin/portal.py#forms::{name}" target="mobyle">{name}</a>
+ jobs: pasteur:{job[pasteur]:d} | other:{job[other]:d} | total:{job[all]:d} ({job_part:.2%} of {cat_name} jobs)
+ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; used by {users[all]:d} users ({users[pasteur]:d} pasteuriens)
+</h1>
+<p>
+<ul>""".format(name=self.name,
+               job=self.job,
+               users=self.users,
+               job_part=self.job['all'] / self.parent.job['all'],
+               cat_name=self.parent.name)
+
+        if self.homepage:
+            s += '<li>homepage: <a href="{homepage}">{homepage}</a></li>\n'.format(homepage=self.homepage)
+        if self.package:
+            s += "<li>belongs to package: {package}</li>\n".format(package=self.package)
+        if self.authors:
+            s += "<li>authors: {authors}</li>\n".format(authors=self.authors)
+        if self.references:
+            s += "<li>references: <ul>"
+        else:
+            s += "<li>references:"
+        for ref in self.references:
+            s += "<li>references: {}</li>\n".format(ref)
+
+        if self.references:
+            s += "</li>"
+        else:
+            s += """</ul>
+</li>"""
+        s += """</ul></p>
+               </div>\n"""
         return s
 
     def update_job(self):
@@ -94,9 +133,16 @@ class Mobyle(Node):
                      'all': all_}
 
 
-    def add_interface(self, name, authors, citations, package, homepage, job, categories):
+    def add_interface(self, name, authors, references, package, homepage, job, users, categories):
 
-        interface = Interface(name, job=job)
+        interface = Interface(name,
+                              authors=authors,
+                              references=references,
+                              package=package,
+                              homepage=homepage,
+                              job=job,
+                              users=users
+                              )
         # retrieve categories
         # if category does not exists yet
         # build and add it
@@ -114,24 +160,38 @@ class Mobyle(Node):
             node.add_child(interface)
 
 
-    def scan_services(self, repository_path, job_counter):
+    def scan_services(self, repository_path, job_counter, user_counter):
         interfaces = glob.glob(os.path.join(repository_path, '*.xml'))
         parser = etree.XMLParser(no_network=False)
         for interface in interfaces:
-            print("-------- process {} --------".format(os.path.basename(interface)[:-4]), file=sys.stderr)
+            print("-------- process {} --------".format(os.path.basename(interface)[:-4]), file=sys.stdout)
             doc = etree.parse(interface, parser)
             root = doc.getroot()
             head_node = root.find('./head')
             name = head_node.find('./name').text
             categories = [n.text for n in head_node.findall('./category')]
-            authors = None
-            citations = None
 
             package = head_node.find('package/name')
             if package is not None:
                 package = package.text
 
-            homepage = None
+            homepage = head_node.find('doc/homepagelink')
+            if homepage is None:
+                homepage = head_node.find('package/doc/homepagelink')
+            if homepage is not None:
+                homepage = homepage.text
+
+            authors = head_node.find('doc/authors')
+            if authors is None:
+                authors = head_node.find('package/doc/authors')
+            if authors is not None:
+                authors = authors.text
+
+            references = head_node.findall('doc/reference')
+            if not references:
+                references = head_node.findall('package/doc/reference')
+            references = [n.text for n in references]
+
             job_count = {'pasteur': 0,
                          'other': 0,
                          'all': 0}
@@ -139,7 +199,16 @@ class Mobyle(Node):
                 job_count.update(job_counter[name])
             except KeyError:
                 continue
-            self.add_interface(name, authors, citations, package, homepage, job_count, categories)
+
+            users = {'pasteur': 0,
+                     'other': 0,
+                     'all': 0}
+            try:
+                users.update(user_counter[name])
+            except KeyError:
+                pass
+
+            self.add_interface(name, authors, references, package, homepage, job_count, users, categories)
 
 
     def to_html(self, stat_start, stat_stop):
@@ -179,7 +248,7 @@ if __name__ == '__main__':
     import pymongo
 
     sys.path.insert(0, '/home/bneron/Mobyle/mobyle_statistics')
-    from mobyle_statistics import jobs_count_per_service
+    from mobyle_statistics import jobs_count_per_service, user_count_per_service
 
     client = pymongo.MongoClient('localhost', 27017, w=1, j=True)
     db_name = 'mobyle_1'
@@ -207,9 +276,28 @@ if __name__ == '__main__':
             job_counter[p['_id']] = {'pasteur': p['count']}
 
 
+    uc = user_count_per_service(col, start=start, stop=stop)
+    uc_fo = user_count_per_service(col, start=start, stop=stop, foreigner=True, pasteurien=False)
+    uc_pa = user_count_per_service(col, start=start, stop=stop, foreigner=False, pasteurien=True)
+    user_counter = {}
+    for s_name, count in uc.items():
+        user_counter[s_name] = {'all': len(count)}
+    for s_name, count in uc_fo.items():
+        if s_name in user_counter:
+            user_counter[s_name]['other'] = len(count)
+        else:
+            user_counter[s_name] = {'other': len(count)}
+
+    for s_name, count in uc_pa.items():
+        if s_name in user_counter:
+            user_counter[s_name]['pasteur'] = len(count)
+        else:
+            user_counter[s_name] = {'pasteur': len(count)}
+
     mobyle = Mobyle()
-    repository_path = '/home/bneron/Mobyle/pasteur-programs/trunk/'
-    mobyle.scan_services(repository_path, job_counter)
+    #repository_path = '/home/bneron/Mobyle/pasteur-programs/trunk/'
+    repository_path = os.path.abspath('../data/programs')
+    mobyle.scan_services(repository_path, job_counter, user_counter)
 
     with open('mobyle_statistics.html', 'w') as mob_html:
         mob_html.write(mobyle.to_html(start, stop))
