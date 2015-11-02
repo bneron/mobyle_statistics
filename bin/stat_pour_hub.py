@@ -43,8 +43,9 @@ class Node(metaclass=ABCMeta):
 <span style="color:blue">{name}</span> pasteur:{pasteur:d} | other:{other:d} | total:{all:d}""".format(name=self.name,
                                                                                                        **self.job)
         if self.parent:
-            s += " ({job_part:.2%} of {cat_name} jobs)".format(job_part=self.job['all'] / self.parent.job['all'],
-                                                                         cat_name=self.parent.name)
+            s += " ({job_part:.2%} of {cat_name} jobs)".format(job_part=self.job['all'] / self.parent.job['all'] \
+                if self.parent.job['all'] else 0,
+                cat_name=self.parent.name)
         s += "</h1>\n"
         for child_name in sorted(self.children):
             s += self.children[child_name].to_html()
@@ -88,7 +89,7 @@ class Interface(Node):
 <ul>""".format(name=self.name,
                job=self.job,
                users=self.users,
-               job_part=self.job['all'] / self.parent.job['all'],
+               job_part=self.job['all'] / self.parent.job['all'] if self.parent.job['all'] else 0,
                cat_name=self.parent.name)
 
         if self.homepage:
@@ -198,8 +199,7 @@ class Mobyle(Node):
             try:
                 job_count.update(job_counter[name])
             except KeyError:
-                continue
-
+                pass
             users = {'pasteur': 0,
                      'other': 0,
                      'all': 0}
