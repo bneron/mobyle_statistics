@@ -47,10 +47,13 @@ class Node(metaclass=ABCMeta):
                 if self.parent.job['all'] else 0,
                 cat_name=self.parent.name)
         s += "</h1>\n"
-        for child_name in sorted(self.children):
-            s += self.children[child_name].to_html()
+        for child in sorted(self.children.values()):
+            s += child.to_html()
         s += '</div>\n'
         return s
+
+    def __gt__(self, other):
+        return self.name > other.name
 
 
 class Category(Node):
@@ -64,6 +67,16 @@ class Category(Node):
                      'other': other,
                      'all': all_}
         self.parent.update_job()
+
+
+    def __gt__(self, other):
+        if isinstance(other, Interface):
+            return False
+        elif isinstance(other, Mobyle):
+            return True
+        else:
+            return super().__gt__(other)
+
 
 
 
@@ -118,6 +131,11 @@ class Interface(Node):
         for one_parent in self.parent:
             one_parent.update_job()
 
+    def __gt__(self, other):
+        if isinstance(other, (Category, Mobyle)):
+            return True
+        else:
+            return super().__gt__(other)
 
 
 class Mobyle(Node):
@@ -240,6 +258,7 @@ class Mobyle(Node):
                   start=start,
                   stop=stop)
         return s
+
 
 
 
